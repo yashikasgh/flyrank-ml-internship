@@ -1,105 +1,230 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="An empirical study of content refresh opportunity scoring using baseline rules and logistic regression.">
-  <title>When Should Content Be Refreshed? | FlyRank ML Research</title>
-  <style>
-    :root {
-      --ink: #20251f;
-      --muted: #626b62;
-      --line: #dfe5dc;
-      --paper: #fbfcf8;
-      --accent: #356b50;
-      --soft: #edf3e9;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font: 16px/1.75 Georgia, "Times New Roman", serif;
-    }
-    .page { max-width: 900px; margin: auto; padding: 28px 24px 80px; }
-    header {
-      display: flex; justify-content: space-between; gap: 16px;
-      border-bottom: 1px solid var(--line); padding-bottom: 18px;
-      font: 12px/1.5 Arial, sans-serif; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .09em;
-    }
-    h1, h2, h3 { line-height: 1.2; letter-spacing: -.025em; }
-    h1 { font-size: clamp(2.5rem, 7vw, 4.6rem); max-width: 780px; margin: 56px 0 20px; }
-    h2 { font-size: 1.8rem; margin-top: 54px; }
-    h3 { font-size: 1.2rem; margin-top: 28px; }
-    p { max-width: 75ch; }
-    .dek { color: var(--muted); font-size: 1.2rem; }
-    .byline { font: 14px Arial, sans-serif; margin: 24px 0 42px; }
-    .abstract {
-      background: var(--soft); padding: 24px 28px;
-      border-left: 4px solid var(--accent); margin: 34px 0;
-    }
-    .abstract h2 { margin: 0 0 12px; font: bold 13px Arial, sans-serif; text-transform: uppercase; letter-spacing: .1em; }
-    nav { border-block: 1px solid var(--line); padding: 16px 0; margin: 34px 0; }
-    nav a { color: var(--accent); margin: 0 14px 0 0; font: 13px Arial, sans-serif; text-decoration: none; }
-    a { color: var(--accent); }
-    figure { margin: 28px 0; }
-    figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
-    figcaption { font: 13px/1.6 Arial, sans-serif; color: var(--muted); margin-top: 10px; }
-    table { border-collapse: collapse; width: 100%; font: 14px/1.5 Arial, sans-serif; margin: 24px 0; }
-    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
-    th { background: var(--soft); }
-    .note { color: var(--muted); font-size: .92rem; }
-    footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
-    @media (max-width: 600px) {
-      .page { padding: 18px 17px 54px; }
-      .abstract { padding: 18px; }
-      nav a { display: inline-block; margin: 5px 12px 5px 0; }
-      table { font-size: 12px; }
-      th, td { padding: 9px 6px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="An empirical comparison of rules-based content refresh scoring and logistic regression using an anonymized FlyRank starter dataset.">
+<title>When Should Content Be Refreshed? | Research</title>
+<style>
+:root{--ink:#20251f;--muted:#606a60;--line:#dfe5dc;--paper:#fbfcf8;--accent:#356b50;--soft:#edf3e9;--white:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.75 Georgia,"Times New Roman",serif}
+.page{max-width:900px;margin:auto;padding:28px 24px 76px}
+header{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:18px;font:12px/1.5 Arial,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}
+h1,h2,h3{line-height:1.2;letter-spacing:-.025em}
+h1{font-size:clamp(2.6rem,7vw,4.7rem);max-width:800px;margin:54px 0 18px}
+h2{font-size:1.85rem;margin:56px 0 18px}
+h3{font-size:1.2rem;margin-top:28px}
+p{max-width:76ch}
+a{color:var(--accent)}
+.dek{color:var(--muted);font-size:1.2rem}
+.byline,.meta,.small{font:14px/1.65 Arial,sans-serif}
+.byline{margin:24px 0 38px}
+.abstract{background:var(--soft);padding:24px 28px;border-left:4px solid var(--accent);margin:30px 0}
+.abstract h2{font:bold 13px Arial,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin:0 0 12px}
+.abstract p{margin-bottom:0}
+nav{border-block:1px solid var(--line);padding:15px 0;margin:32px 0}
+nav a{display:inline-block;margin:5px 13px 5px 0;font:13px Arial,sans-serif;text-decoration:none}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:25px 0}
+.kpi{border:1px solid var(--line);padding:16px;background:var(--white)}
+.kpi strong{display:block;font:700 25px Arial,sans-serif;color:var(--accent)}
+.kpi span{font:12px/1.5 Arial,sans-serif;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:24px 0;font:14px/1.55 Arial,sans-serif}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft)}
+figure{margin:26px 0;padding:18px;background:var(--white);border:1px solid var(--line)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font:13px/1.6 Arial,sans-serif;color:var(--muted);margin-top:12px}
+.callout{border-left:3px solid var(--accent);padding:10px 18px;background:var(--soft)}
+.tag{font:12px Arial,sans-serif;color:var(--muted)}
+li{padding-left:4px;margin:8px 0}
+footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+@media(max-width:600px){.page{padding:18px 16px 50px}h1{margin-top:38px}.abstract{padding:18px}.kpis{grid-template-columns:1fr}.kpi strong{font-size:22px}table{font-size:12px}th,td{padding:8px 5px}figure{padding:10px}}
+</style>
 </head>
 <body>
-  <main class="page">
-    <header>
-      <span>Applied Search Intelligence</span>
-      <span>Research · 2026</span>
-    </header>
+<main class="page">
+<header><span>Applied Search Intelligence</span><span>Research · 2026</span></header>
 
-    <h1>When Should Content Be Refreshed?</h1>
-    <p class="dek">Comparing transparent rules with logistic regression for content-refresh opportunity scoring.</p>
-    <p class="byline">By Yashika Singh · FlyRank ML Internship</p>
+<h1>When Should Content Be Refreshed?</h1>
+<p class="dek">Comparing transparent rules with logistic regression for content-refresh opportunity scoring.</p>
+<p class="byline">By Yashika Singh · FlyRank ML Internship</p>
 
-    <section class="abstract" id="abstract">
-      <h2>Abstract</h2>
-      <p>Abstract placeholder — replace with the five-sentence summary after the results and limitations are finalized.</p>
-    </section>
+<section class="abstract" id="abstract">
+<h2>Abstract</h2>
+<p>This study asks whether logistic regression can improve the prioritization of content that may be experiencing declining search visibility compared with a transparent rules-based baseline. The experiment uses an anonymized starter dataset containing 30,000 content records and 44 columns, with a binary label derived from the recorded trend direction. A logistic-regression classifier is evaluated using a conventional random split and a client-grouped split, and compared with a rules-based score using Precision@20, Precision@50, and average precision. On the random split, logistic regression outperformed the baseline on all three reported metrics; on the client-grouped split, the baseline performed better on both precision-at-K metrics while average precision was similar. These findings support further controlled evaluation of ranked review queues, not a claim that the model generalizes to all clients or that refreshing content causes search-performance recovery.</p>
+</section>
 
-    <nav aria-label="Paper sections">
-      <a href="#introduction">Introduction</a>
-      <a href="#data">Data</a>
-      <a href="#methodology">Methodology</a>
-      <a href="#results">Results</a>
-      <a href="#limitations">Limitations</a>
-      <a href="#recommendations">Recommendations</a>
-      <a href="#reproducibility">Reproducibility</a>
-      <a href="#acknowledgments">Acknowledgments</a>
-    </nav>
+<nav aria-label="Paper sections">
+<a href="#introduction">Introduction</a><a href="#data">Data</a><a href="#methodology">Methodology</a><a href="#results">Results</a><a href="#limitations">Limitations</a><a href="#recommendations">Recommendations</a><a href="#reproducibility">Reproducibility</a><a href="#acknowledgments">Data credit</a>
+</nav>
 
-    <section id="introduction"><h2>1. Introduction</h2><p>Content teams need a transparent way to prioritize pages for human review. This study compares a simple rules-based queue with a logistic-regression ranking approach.</p></section>
-    <section id="data"><h2>2. Data</h2><p>Data details to be finalized from the actual notebook and dataset documentation before publication.</p></section>
-    <section id="methodology"><h2>3. Methodology</h2><p>Methodology details to be finalized, including the label definition, feature set, baseline, validation design and leakage checks.</p></section>
-    <section id="results"><h2>4. Results</h2><p>Results and charts will be added from the verified experimental outputs.</p></section>
-    <section id="limitations"><h2>5. Limitations &amp; Honest Framing</h2><p>This is an exploratory evaluation. The findings do not establish that content refreshes cause search-performance improvements. Temporal leakage has not been ruled out.</p></section>
-    <section id="recommendations"><h2>6. Ranked Recommendations</h2><p>Recommendations will be added from the action playbook, with human review before any content changes.</p></section>
-    <section id="reproducibility"><h2>7. Reproducibility</h2><p><a href="https://github.com/yashikasgh/flyrank-ml-internship">Repository and notebooks</a>. Exact rerun instructions and dependencies to be added after checking the repository.</p></section>
-    <section id="acknowledgments"><h2>8. Acknowledgments &amp; Data Credit</h2><p>Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a>.</p></section>
+<section id="introduction">
+<h2>1. Introduction / Problem Statement</h2>
+<p>Content teams often have more pages to review than they can manually assess at once. A practical prioritization system should help identify which pages deserve attention first, while remaining transparent enough for a human reviewer to understand and challenge its suggestions.</p>
+<p>This project studies one narrow question: <strong>does a logistic-regression ranking improve the identification of records labelled as declining compared with a simple rules-based content-refresh score?</strong></p>
+<p>The comparison matters because a complex model is not automatically better than a clear heuristic. If the model performs well only when records from the same client appear in both training and testing, its apparent advantage may not transfer to unseen clients. This experiment therefore compares random validation with client-grouped validation.</p>
+<div class="callout"><strong>Central finding:</strong> the model's advantage on the random split did not carry over to the client-grouped split. The validation design changes the conclusion.</div>
+</section>
 
-    <footer>
-      <p>Exploratory analysis of an anonymized starter dataset. Results should be interpreted within the validation and data limitations described above.</p>
-    </footer>
-  </main>
+<section id="data">
+<h2>2. Data</h2>
+<p>The experiment used the anonymized starter file <code>content_refresh_anonymized.csv</code> supplied for the FlyRank ML Internship. The analyzed dataframe contained 30,000 records, 44 columns, and 30,000 unique content IDs across 32 client groups.</p>
+<table>
+<thead><tr><th>Item</th><th>What this experiment used</th></tr></thead>
+<tbody>
+<tr><td>Dataset</td><td>Anonymized content-refresh starter dataset</td></tr>
+<tr><td>Records and columns</td><td>30,000 rows and 44 columns</td></tr>
+<tr><td>Grouping</td><td>32 client groups</td></tr>
+<tr><td>Target source</td><td>Recorded <code>trend_direction</code></td></tr>
+<tr><td>Target label</td><td><code>is_down = 1</code> when <code>trend_direction == "down"</code>; otherwise 0</td></tr>
+<tr><td>Time-window provenance</td><td>The exact timing and overlap between feature windows and target construction were not independently verified for this experiment.</td></tr>
+</tbody>
+</table>
+<p>The starter dataset is not the full 79-million-row warehouse release. Results on this 30,000-row dataset must not be presented as results from training on 79 million rows.</p>
+<h3>Exclusions and public-safety choices</h3>
+<p>The experiment excluded identifiers from model features, the target source and its associated trend percentage, recent-versus-previous 30-day metrics, and the baseline score. These exclusions reduce obvious target leakage and prevent the model from directly using the baseline's output. The exclusions do not prove that all temporal or indirect leakage has been removed.</p>
+<p>This public report presents aggregate results and generic methodology only. It does not publish client names, domains, private URLs, raw private search queries, credentials, or a row-level action queue.</p>
+</section>
+
+<section id="methodology">
+<h2>3. Methodology</h2>
+<h3>Rules-based baseline</h3>
+<p>The baseline starts with a transparent score from 0 to 100:</p>
+<ul>
+<li><strong>Stale:</strong> add 40 points when <code>days_since_last_update &gt;= 180</code>.</li>
+<li><strong>High visibility:</strong> add 40 points when <code>impressions_90d</code> is at or above the dataset median.</li>
+<li><strong>Low click-through rate:</strong> add 20 points when <code>ctr</code> is below the dataset median.</li>
+</ul>
+<p>For the action playbook, the recorded medians were 731 impressions and 0.07 CTR. These thresholds are dataset-specific operational heuristics, not universal SEO standards.</p>
+<h3>Logistic-regression model</h3>
+<p>The target was the binary indicator for a recorded downward trend. Numeric features were search volume, competition, CPC, word count, character count, content age, and days since the last update. Categorical features were competition level, content type, main intent, age tier, freshness tier, word-count tier, and character-count tier.</p>
+<p>The model did not use the target source, trend percentage, recent/previous 30-day metrics, identifiers, or baseline score as input features.</p>
+<h3>Validation design</h3>
+<table>
+<thead><tr><th>Design</th><th>Training / test records</th><th>Client overlap</th><th>Test positive rate</th></tr></thead>
+<tbody>
+<tr><td>Random split</td><td>22,500 / 7,500</td><td>31 clients overlap</td><td>54.2%</td></tr>
+<tr><td>Client-grouped split</td><td>22,885 / 7,115</td><td>Zero clients overlap</td><td>51.7%</td></tr>
+</tbody>
+</table>
+<p>The random split tests performance when client patterns can appear on both sides of the split. The grouped split tests a more demanding setting in which the eight held-out test clients do not occur in training. The results are not directly interchangeable because the test sets and their positive rates differ.</p>
+<h3>Evaluation metrics</h3>
+<ul>
+<li><strong>Precision@20 and Precision@50:</strong> the proportion of records labelled as declining among the top 20 or top 50 ranked records.</li>
+<li><strong>Average precision (AP):</strong> a summary of precision across the ranked list.</li>
+</ul>
+<p>The available experiment notes do not establish that the target's measurement window is strictly later than every feature window. Temporal leakage therefore remains an unresolved validation risk.</p>
+</section>
+
+<section id="results">
+<h2>4. Results: Model vs. Baseline</h2>
+<p>The table compares each method against the baseline on the same test split. The positive rate is shown for context; the random and grouped test sets have different compositions.</p>
+<table>
+<thead><tr><th>Validation</th><th>Method</th><th>Precision@20</th><th>Precision@50</th><th>Average precision</th></tr></thead>
+<tbody>
+<tr><td>Random</td><td>Rules baseline</td><td>0.75</td><td>0.72</td><td>0.583</td></tr>
+<tr><td>Random</td><td>Logistic regression</td><td>0.80</td><td>0.74</td><td>0.651</td></tr>
+<tr><td>Client-grouped</td><td>Rules baseline</td><td>0.60</td><td>0.56</td><td>0.520</td></tr>
+<tr><td>Client-grouped</td><td>Logistic regression</td><td>0.30</td><td>0.38</td><td>0.514</td></tr>
+</tbody>
+</table>
+
+<h3>Precision at the top of the queue</h3>
+<figure>
+<svg viewBox="0 0 700 355" role="img" aria-labelledby="chartTitle chartDesc">
+<title id="chartTitle">Precision at 20 for baseline and logistic regression</title>
+<desc id="chartDesc">On random validation, baseline precision is 0.75 and logistic regression is 0.80. On client-grouped validation, baseline is 0.60 and logistic regression is 0.30.</desc>
+<text x="12" y="24" font-size="15" fill="#20251f" font-weight="bold">Precision@20</text>
+<g font-size="12" fill="#606a60">
+<text x="145" y="55">0</text><text x="260" y="55">0.25</text><text x="375" y="55">0.50</text><text x="490" y="55">0.75</text><text x="600" y="55">1.00</text>
+</g>
+<g stroke="#dfe5dc" stroke-width="1"><path d="M150 62V310 M265 62V310 M380 62V310 M495 62V310 M610 62V310"/></g>
+<text x="12" y="87" font-size="14" fill="#20251f" font-weight="bold">Random split</text>
+<text x="12" y="116" font-size="12" fill="#606a60">Baseline</text>
+<rect x="150" y="98" width="345" height="24" fill="#9ca99b"/>
+<text x="504" y="116" font-size="12" fill="#20251f">0.75</text>
+<text x="12" y="151" font-size="12" fill="#606a60">Logistic regression</text>
+<rect x="150" y="133" width="368" height="24" fill="#356b50"/>
+<text x="527" y="151" font-size="12" fill="#20251f">0.80</text>
+<text x="12" y="200" font-size="14" fill="#20251f" font-weight="bold">Client-grouped</text>
+<text x="12" y="229" font-size="12" fill="#606a60">Baseline</text>
+<rect x="150" y="211" width="276" height="24" fill="#9ca99b"/>
+<text x="435" y="229" font-size="12" fill="#20251f">0.60</text>
+<text x="12" y="264" font-size="12" fill="#606a60">Logistic regression</text>
+<rect x="150" y="246" width="138" height="24" fill="#356b50"/>
+<text x="297" y="264" font-size="12" fill="#20251f">0.30</text>
+<text x="150" y="335" font-size="11" fill="#606a60">Higher is better for this metric. Bars use a common 0–1 scale.</text>
+</svg>
+<figcaption>Figure 1. Precision@20 changes with validation design. Logistic regression is slightly better on the random split but substantially worse than the rules baseline on the client-grouped split.</figcaption>
+</figure>
+
+<h3>Interpretation</h3>
+<p>On random validation, logistic regression reached Precision@20 of 0.80 versus 0.75 for the baseline, Precision@50 of 0.74 versus 0.72, and AP of 0.651 versus 0.583. This is a favorable result in a split where 31 clients overlap across training and testing.</p>
+<p>On client-grouped validation, the baseline reached Precision@20 of 0.60 and Precision@50 of 0.56, compared with 0.30 and 0.38 for logistic regression. AP was close: 0.520 for the baseline and 0.514 for the model. This does not establish that the model memorized clients, but it does show that the random-split advantage was not robust to this held-out-client test.</p>
+<p class="note">No confidence intervals or significance tests are reported here. Differences should be interpreted descriptively, not as proof of statistical significance.</p>
+</section>
+
+<section id="limitations">
+<h2>5. Limitations &amp; Honest Framing</h2>
+<ul>
+<li><strong>Starter-data scope:</strong> this experiment used 30,000 anonymized rows, not the full 79-million-row warehouse release.</li>
+<li><strong>Temporal leakage remains unresolved:</strong> the exact relationship between feature windows and label construction was not independently verified. A future-time test is still needed.</li>
+<li><strong>Limited held-out clients:</strong> the grouped test contains eight clients. Performance may differ on a broader or different client population.</li>
+<li><strong>Different split composition:</strong> the test positive rates were 54.2% for random validation and 51.7% for grouped validation. Comparisons across the two splits need this context.</li>
+<li><strong>Observational label:</strong> the model predicts a recorded trend label; it does not show that refreshing a page will cause recovery.</li>
+<li><strong>Heuristic thresholds:</strong> the baseline thresholds were derived from this dataset. They may not transfer unchanged to another dataset or operating environment.</li>
+<li><strong>Operational review required:</strong> a ranked score is a triage aid, not an automatic instruction to rewrite or republish content.</li>
+</ul>
+<p>This is an exploratory model comparison. It does not prove Google's ranking mechanisms, establish causal effects, or validate production readiness.</p>
+</section>
+
+<section id="recommendations">
+<h2>6. Ranked Recommendations</h2>
+<p>The action playbook turns observed signals into a human-review workflow. Its thresholds are prioritization heuristics, not predictions of guaranteed recovery.</p>
+<table>
+<thead><tr><th>Priority</th><th>Action</th><th>Rule / rationale</th><th>Records</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Priority human review</td><td>Review the small highest-priority group first. Confirm the page's actual search intent, performance context, and potential issue before making changes.</td><td>15 (0.05%)</td></tr>
+<tr><td>2</td><td>Secondary human review</td><td>Inspect pages flagged by the broader rule-based scoring logic. Decide whether the evidence supports a content, intent, or snippet review.</td><td>15,151</td></tr>
+<tr><td>3</td><td>Monitor</td><td>Keep the remaining records under observation rather than assuming every page needs an immediate refresh.</td><td>14,834</td></tr>
+</tbody>
+</table>
+<p class="note">Action counts are from the generated playbook: 30,000 records total. The labels describe workflow recommendations, not confirmed business outcomes.</p>
+<h3>Suggested review sequence</h3>
+<ol>
+<li>Check the priority queue manually and verify the underlying signals.</li>
+<li>For stale pages, compare the page's purpose and accuracy with current user needs before editing.</li>
+<li>For high-impression, low-CTR pages, review the search result presentation and query intent before rewriting the main content.</li>
+<li>Record the reason for each decision and monitor subsequent performance using a clearly defined time window.</li>
+<li>Evaluate any future model using a time-aware holdout and a client-grouped split before relying on it operationally.</li>
+</ol>
+<p>The grouped validation results favor keeping the transparent baseline as the reference point until a better model demonstrates robust performance on held-out clients and future time periods.</p>
+</section>
+
+<section id="reproducibility">
+<h2>7. Reproducibility</h2>
+<p>The source repository and capstone notebook are the starting points for inspecting the workflow and its assumptions.</p>
+<ul>
+<li><a href="https://github.com/yashikasgh/flyrank-ml-internship">Project repository</a></li>
+<li><a href="https://github.com/yashikasgh/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb">Capstone notebook</a></li>
+</ul>
+<p>To reproduce the reported comparison, use the same anonymized dataset, feature exclusions, target definition, baseline rules, validation designs, and evaluation metrics documented in this paper. Verify the notebook's preprocessing and split configuration before treating a rerun as exact reproduction.</p>
+<p class="note">A fixed random seed and a complete dependency/environment manifest have not been confirmed in this write-up. They should be documented from the actual notebook and repository rather than inferred.</p>
+</section>
+
+<section id="acknowledgments">
+<h2>8. Acknowledgments &amp; Data Credit</h2>
+<p>Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a>.</p>
+<p>Thanks to the internship track for providing the anonymized dataset and the applied search-intelligence research workflow.</p>
+</section>
+
+<footer>
+<p><strong>Research note.</strong> This page reports an exploratory comparison on an anonymized starter dataset. It is intended to support transparent review and further validation, not to make causal claims about content changes or search rankings.</p>
+<p class="small">Last updated: October 2026 · <a href="https://github.com/yashikasgh/flyrank-ml-internship">View source repository</a></p>
+</footer>
+</main>
 </body>
 </html>
